@@ -83,6 +83,9 @@ python3 test.py -s --vis_thres 0.3
 $ python MyTest.py --video samples/vid.mp4 --output-dir outputs/
 #run the MyTest.py in your own webcam
 $ python MyTest.py --src 0 --output-dir outputs/
+#Test phase using surveillance video use
+python testVideo.py --video samples/vidd.avi 
+
 
 
 ```
