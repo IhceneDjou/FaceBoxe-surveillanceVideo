@@ -43,9 +43,9 @@ class AnnotationTransform(object):
         """
         res = np.empty((0, 5))
         for obj in target.iter('object'):
-            difficult = int(obj.find('difficult').text) == 1
-            if not self.keep_difficult and difficult:
-                continue
+            #difficult = int(obj.find('difficult').text) == 1
+            #if not self.keep_difficult and difficult:
+               # continue
             name = obj.find('name').text.lower().strip()
             bbox = obj.find('bndbox')
 
@@ -85,6 +85,7 @@ class VOCDetection(data.Dataset):
 
     def __getitem__(self, index):
         img_id = self.ids[index]
+        print(img_id)
         target = ET.parse(self._annopath % img_id[1]).getroot()
         img = cv2.imread(self._imgpath % img_id[0], cv2.IMREAD_COLOR)
         height, width, _ = img.shape
