@@ -14,8 +14,8 @@ import math
 from models.faceboxes import FaceBoxes
 
 parser = argparse.ArgumentParser(description='FaceBoxes Training')
-parser.add_argument('--training_dataset', default='./data/WIDER_FACE', help='Training dataset directory')
-parser.add_argument('-b', '--batch_size', default=15, type=int, help='Batch size for training')
+parser.add_argument('--training_dataset', default='./data/allbdd', help='Training dataset directory')
+parser.add_argument('-b', '--batch_size', default=20, type=int, help='Batch size for training')
 parser.add_argument('--num_workers', default=8, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--ngpu', default=1, type=int, help='gpus')
 parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
@@ -31,7 +31,7 @@ args = parser.parse_args()
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 
-img_dim = 1024 # only 1024 is supported
+img_dim =1024 # only 1024 is supported
 rgb_mean = (104, 117, 123) # bgr order
 num_classes = 2
 num_gpu = args.ngpu
