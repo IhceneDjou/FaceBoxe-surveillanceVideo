@@ -14,8 +14,8 @@ import math
 from models.faceboxes import FaceBoxes
 
 parser = argparse.ArgumentParser(description='FaceBoxes Training')
-parser.add_argument('--training_dataset', default='./data/allbdd', help='Training dataset directory')
-parser.add_argument('-b', '--batch_size', default=20, type=int, help='Batch size for training')
+parser.add_argument('--training_dataset', default='./data/finalbdd', help='Training dataset directory')
+parser.add_argument('-b', '--batch_size', default=15, type=int, help='Batch size for training')
 parser.add_argument('--num_workers', default=8, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--ngpu', default=1, type=int, help='gpus')
 parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float, help='initial learning rate')
@@ -114,6 +114,7 @@ def train():
 
         # load train data
         images, targets = next(batch_iterator)
+
         images = images.to(device)
         targets = [anno.to(device) for anno in targets]
 
