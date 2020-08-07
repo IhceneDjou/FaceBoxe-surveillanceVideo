@@ -15,11 +15,11 @@ from utils.timer import Timer
 
 parser = argparse.ArgumentParser(description='FaceBoxes')
 
-parser.add_argument('-m', '--trained_model', default='weights/FaceBoxes.pth',
+parser.add_argument('-m', '--trained_model', default='weights/Final_FaceBoxes.pth',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--save_folder', default='eval/', type=str, help='Dir to save results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
-parser.add_argument('--dataset', default='PASCAL', type=str, choices=['AFW', 'PASCAL', 'FDDB'], help='dataset')
+parser.add_argument('--dataset', default='PASCAL', type=str, choices=['AFW', 'PASCAL', 'FDDB','testmybdd'], help='dataset')
 parser.add_argument('--confidence_threshold', default=0.05, type=float, help='confidence_threshold')
 parser.add_argument('--top_k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms_threshold', default=0.3, type=float, help='nms_threshold')
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     num_images = len(test_dataset)
 
     # testing scale
+    resize=3
     if args.dataset == "FDDB":
         resize = 3
     elif args.dataset == "PASCAL":
