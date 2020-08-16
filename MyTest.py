@@ -18,7 +18,7 @@ from utils.timer import Timer
 parser = argparse.ArgumentParser(description='FaceBoxes')
 
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
-parser.add_argument('-m', '--trained_model', default='weights/FaceBoxes.pth',type=str, help='Trained state_dict file path to open')
+parser.add_argument('-m', '--trained_model', default='weights/Final_FaceBoxes.pth',type=str, help='Trained state_dict file path to open')
 parser.add_argument('--video', type=str, default='',help='path to video file')
 parser.add_argument('--confidence_threshold', default=0.05, type=float, help='confidence_threshold')
 parser.add_argument('--top_k', default=5000, type=int, help='top_k')
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     #testing begin
     wind_name = 'face detection in surviellance camera using FaceBoxes'
-    cv2.namedWindow(wind_name, cv2.WINDOW_NORMAL)
+    #cv2.namedWindow(wind_name, cv2.WINDOW_NORMAL)
     output_file = ''
 
     if args.video:
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     else:
         # Get data from the camera
         cap = cv2.VideoCapture(args.src)
-        output_file = args.video[:-4].rsplit('/')[-1] + '_webcamFaceBox.avi'
+        output_file = args.video[:-4].rsplit('/')[-1] + '_webcamFaceBoxV.avi'
 
 
 
@@ -125,76 +125,76 @@ if __name__ == '__main__':
             print('[i] ==> Output file is stored at', os.path.join(args.output_dir, output_file))
             cv2.waitKey(1000)
             break
+        else:
+           frame = np.float32(img)
+           if resize != 1:
+               frame= cv2.resize(frame, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
+           IMG_WIDTH, IMG_HEIGHT, _ = frame.shape
+           # Create a 4D blob from a frame.
+           #blob = cv2.dnn.blobFromImage(frame, 1 / 255, (IMG_WIDTH, IMG_HEIGHT),[0, 0, 0], 1, crop=False)
+           # Sets the input to the network
+           #net.setInput(blob)
+           # Runs the forward pass to get output of the output layers
+           scale = torch.Tensor([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
+           frame -= (104, 117, 123)
+           frame = frame.transpose(2, 0, 1)
+           frame= torch.from_numpy(frame).unsqueeze(0)
+           frame = frame.to(device)
+           scale = scale.to(device)
 
-        frame = np.float32(img)
-        if resize != 1:
-            frame= cv2.resize(frame, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
-        IMG_WIDTH, IMG_HEIGHT, _ = frame.shape
-        # Create a 4D blob from a frame.
-        #blob = cv2.dnn.blobFromImage(frame, 1 / 255, (IMG_WIDTH, IMG_HEIGHT),[0, 0, 0], 1, crop=False)
-        # Sets the input to the network
-        #net.setInput(blob)
-        # Runs the forward pass to get output of the output layers
-        scale = torch.Tensor([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
-        frame -= (104, 117, 123)
-        frame = frame.transpose(2, 0, 1)
-        frame= torch.from_numpy(frame).unsqueeze(0)
-        frame = frame.to(device)
-        scale = scale.to(device)
+           _t['forward_pass'].tic()
+           loc, conf = net(frame)  # forward pass
+           _t['forward_pass'].toc()
+           _t['misc'].tic()
+           priorbox = PriorBox(cfg, image_size=(IMG_WIDTH, IMG_HEIGHT))
+           priors = priorbox.forward()
+           priors = priors.to(device)
+           prior_data = priors.data
+           boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
+           boxes = boxes * scale / resize
+           boxes = boxes.cpu().numpy()
+           scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
+           # Remove the bounding boxes with low confidence
+           # faces = post_process(frame, outs, CONF_THRESHOLD, NMS_THRESHOLD)
+           inds = np.where(scores > args.confidence_threshold)[0]
+           boxes = boxes[inds]
+           scores = scores[inds]
+           # keep top-K before NMS
+           order = scores.argsort()[::-1][:args.top_k]
+           boxes = boxes[order]
+           scores = scores[order]
 
-        _t['forward_pass'].tic()
-        loc, conf = net(frame)  # forward pass
-        _t['forward_pass'].toc()
-        _t['misc'].tic()
-        priorbox = PriorBox(cfg, image_size=(IMG_WIDTH, IMG_HEIGHT))
-        priors = priorbox.forward()
-        priors = priors.to(device)
-        prior_data = priors.data
-        boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
-        boxes = boxes * scale / resize
-        boxes = boxes.cpu().numpy()
-        scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
-        # Remove the bounding boxes with low confidence
-        # faces = post_process(frame, outs, CONF_THRESHOLD, NMS_THRESHOLD)
-        inds = np.where(scores > args.confidence_threshold)[0]
-        boxes = boxes[inds]
-        scores = scores[inds]
-        # keep top-K before NMS
-        order = scores.argsort()[::-1][:args.top_k]
-        boxes = boxes[order]
-        scores = scores[order]
+           # do NMS
+           faces=np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
+           keep = nms(faces, args.nms_threshold, force_cpu=args.cpu)
+           faces = faces[keep, :]
+           # keep top-K faster NMS
+           faces= faces[:args.keep_top_k, :]
+           _t['misc'].toc()
+            #draw bondingBox
 
-        # do NMS
-        faces=np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
-        keep = nms(faces, args.nms_threshold, force_cpu=args.cpu)
-        faces = faces[keep, :]
-        # keep top-K faster NMS
-        faces= faces[:args.keep_top_k, :]
-        _t['misc'].toc()
-         #draw bondingBox
+           if len(faces)!=0:
+             for b in faces:
+               if b[4] < args.vis_thres:
+                  continue
+               text = "face"+"{:.4f}".format(b[4])
+               b = list(map(int, b))
+               cv2.rectangle(img, (b[0], b[1]), (b[2], b[3]), (0,255 , 0), 2)
+               cx = b[0]
+               cy = b[1] + 12
+               cv2.putText(img, text, (cx, cy),
+                          cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+           #show the vid
+           cv2.imshow(wind_name, img)
+           # save the output video
+           video_writer.write(img.astype(np.uint8))
+           key = cv2.waitKey(1)
+           if key == 27 or key == ord('q'):
+                print('[i] ==> Interrupted by user!')
+                break
 
-        if len(faces)!=0:
-          for b in faces:
-            if b[4] < args.vis_thres:
-               continue
-            text = "{:.4f}".format(b[4])
-            b = list(map(int, b))
-            cv2.rectangle(img, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-            cx = b[0]
-            cy = b[1] + 12
-            cv2.putText(img, text, (cx, cy),
-                       cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
-            #save the output video
-        video_writer.write(img.astype(np.uint8))
-        #show the vid
-        cv2.imshow('res', img)
-        key = cv2.waitKey(1)
-        if key == 27 or key == ord('q'):
-             print('[i] ==> Interrupted by user!')
-             break
-
-        facecor=faces
-        faces=[]
+           facecor=faces
+           faces=[]
 
     cap.release()
     cv2.destroyAllWindows()
