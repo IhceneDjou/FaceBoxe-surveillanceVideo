@@ -91,7 +91,6 @@ if __name__ == '__main__':
 
     #testing begin
     wind_name = 'face detection in surviellance camera using FaceBoxes'
-    #cv2.namedWindow(wind_name, cv2.WINDOW_NORMAL)
     output_file = ''
 
     if args.video:
