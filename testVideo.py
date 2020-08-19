@@ -32,7 +32,7 @@ parser.add_argument('--video', type=str, default='',help='path to video file')
 
 args = parser.parse_args()
 
-vidcap = cv2.VideoCapture('samples/vidd.mp4')
+vidcap = cv2.VideoCapture('samples/testingVideo.mp4')
 
 
 def getFrame(sec):
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     while True:
             cap.set(cv2.CAP_PROP_POS_MSEC, sec * 1000)
             has_frame, img_raw = cap.read(cv2.IMREAD_COLOR)
-            sec+=1
+            sec+=4
             if not has_frame:
                 print('[i] ==> Done processing!!!')
                 break
@@ -177,7 +177,7 @@ if __name__ == '__main__':
                 ymin += 0.2 * (ymax - ymin + 1)
                 score = dets[k, 4]
                 fw.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.format('frame'+str(i), score, xmin, ymin, xmax, ymax))
-            print('im_detect: {:d}/{:d} forward_pass_time: {:.4f}s misc: {:.4f}s'.format(i , 1000, _t['forward_pass'].average_time, _t['misc'].average_time))
+            print('im_detect: {:d}/{:d} forward_pass_time: {:.4f}s misc: {:.4f}s'.format(i , 205, _t['forward_pass'].average_time, _t['misc'].average_time))
             i += 1
 
 
