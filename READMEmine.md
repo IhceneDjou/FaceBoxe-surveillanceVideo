@@ -16,3 +16,9 @@ $ python MyTest.py --video samples/vid.mp4 --output-dir outputs/
 $ python MyTest.py --src 0 --output-dir outputs/
 #Test phase using surveillance video use
 python testVideo.py --video samples/vidd.avi 
+
+#To run the code on the HPC just change the line in script.sh based on the need
+python train.py
+             # in case of training
+python test.py --dataset testmybdd  
+             # in case of testing
